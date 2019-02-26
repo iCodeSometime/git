@@ -558,7 +558,8 @@ static void create_branch_alias(const char* branch_name, const char* alias_name)
 
 	strbuf_release(&branch_ref);
 	strbuf_release(&alias_ref);
-	printf("%s created as an alias for %s\n", alias_name, branch_name);
+
+	printf(_("%s created as an alias for %s\n"), alias_name, branch_name);
 }
 
 static GIT_PATH_FUNC(edit_description, "EDIT_DESCRIPTION")

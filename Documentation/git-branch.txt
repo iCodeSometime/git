@@ -19,6 +19,7 @@ SYNOPSIS
 'git branch' --unset-upstream [<branchname>]
 'git branch' (-m | -M) [<oldbranch>] <newbranch>
 'git branch' (-c | -C) [<oldbranch>] <newbranch>
+'git branch' --alias <aliasname> [<branchname>]
 'git branch' (-d | -D) [-r] <branchname>...
 'git branch' --edit-description [<branchname>]
 
@@ -68,6 +69,10 @@ to happen.
 The `-c` and `-C` options have the exact same semantics as `-m` and
 `-M`, except instead of the branch being renamed it along with its
 config and reflog will be copied to a new name.
+
+With a `--alias` option, a symbolic ref with `<aliasname>` will be
+created. You may specify a branch to create the alias for. If one is
+not specified, the currently checked out branch is assumed.
 
 With a `-d` or `-D` option, `<branchname>` will be deleted.  You may
 specify more than one branch for deletion.  If the branch currently
@@ -123,6 +128,9 @@ OPTIONS
 
 -C::
 	Shortcut for `--copy --force`.
+
+--alias::
+	Create an alias for a branch.
 
 --color[=<when>]::
 	Color branches to highlight current, local, and
