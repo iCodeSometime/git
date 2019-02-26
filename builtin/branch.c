@@ -547,6 +547,20 @@ static void copy_or_rename_branch(const char *oldname, const char *newname, int 
 	strbuf_release(&newsection);
 }
 
+static void create_branch_alias(const char* branch_name, const char* alias_name) {
+	struct strbuf branch_ref = STRBUF_INIT;
+	struct strbuf alias_ref = STRBUF_INIT;
+
+	if(!validate_branchname(branch_name, &branch_ref))
+		die(_("%s is not a valid branch"), branch_name);
+	validate_new_branchname(alias_name, &alias_ref, 0);
+	create_symref(alias_ref.buf, branch_ref.buf, "");
+
+	strbuf_release(&branch_ref);
+	strbuf_release(&alias_ref);
+	printf("%s created as an alias for %s\n", alias_name, branch_name);
+}
+
 static GIT_PATH_FUNC(edit_description, "EDIT_DESCRIPTION")
 
 static int edit_branch_description(const char *branch_name)
@@ -580,7 +594,7 @@ static int edit_branch_description(const char *branch_name)
 
 int cmd_branch(int argc, const char **argv, const char *prefix)
 {
-	int delete = 0, rename = 0, copy = 0, force = 0, list = 0;
+	int delete = 0, rename = 0, copy = 0, force = 0, list = 0, alias = 0;
 	int reflog = 0, edit_description = 0;
 	int quiet = 0, unset_upstream = 0;
 	const char *new_upstream = NULL;
@@ -617,6 +631,7 @@ int cmd_branch(int argc, const char **argv, const char *prefix)
 		OPT_BIT('D', NULL, &delete, N_("delete branch (even if not merged)"), 2),
 		OPT_BIT('m', "move", &rename, N_("move/rename a branch and its reflog"), 1),
 		OPT_BIT('M', NULL, &rename, N_("move/rename a branch, even if target exists"), 2),
+		OPT_BOOL(0, "alias", &alias, N_("create an alias for a branch")),
 		OPT_BIT('c', "copy", &copy, N_("copy a branch and its reflog"), 1),
 		OPT_BIT('C', NULL, &copy, N_("copy a branch, even if target exists"), 2),
 		OPT_BOOL('l', "list", &list, N_("list branch names")),
@@ -662,7 +677,8 @@ int cmd_branch(int argc, const char **argv, const char *prefix)
 	argc = parse_options(argc, argv, prefix, options, builtin_branch_usage,
 			     0);
 
-	if (!delete && !rename && !copy && !edit_description && !new_upstream && !unset_upstream && argc == 0)
+	if (!delete && !rename && !copy && !edit_description && !new_upstream && !unset_upstream &&
+	    !alias && argc == 0)
 		list = 1;
 
 	if (filter.with_commit || filter.merge != REF_FILTER_MERGED_NONE || filter.points_at.nr ||
@@ -762,6 +778,15 @@ int cmd_branch(int argc, const char **argv, const char *prefix)
 			copy_or_rename_branch(argv[0], argv[1], 0, rename > 1);
 		else
 			die(_("too many arguments for a rename operation"));
+	} else if (alias) {
+		if (!argc)
+			die(_("alias name required"));
+		else if (argc == 1)
+			create_branch_alias(head, argv[0]);
+		else if (argc == 2)
+			create_branch_alias(argv[1], argv[0]);
+		else
+			die(_("too many arguments for an alias operation"));
 	} else if (new_upstream) {
 		struct branch *branch = branch_get(argv[0]);
 
