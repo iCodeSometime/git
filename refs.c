@@ -1466,6 +1466,34 @@ static int do_for_each_ref(struct ref_store *refs, const char *prefix,
 					do_for_each_ref_helper, &hp);
 }
 
+int refs_for_each_ref_in_chain(struct ref_store *refs, each_ref_fn fn,
+			       void *cb_data, const char *starting_ref)
+{
+	int symref_count;
+	struct object_id oid;
+	int flags;
+	const char *ref_name = xstrdup(starting_ref);
+	int res;
+
+	for (symref_count = 0; symref_count < SYMREF_MAXDEPTH; symref_count++) {
+		res = fn(ref_name, &oid, flags, cb_data);
+		ref_name = refs_resolve_ref_unsafe(refs, ref_name, RESOLVE_REF_NO_RECURSE,
+						   &oid, &flags);
+
+		if (res)
+			return res;
+		if (!(flags & REF_ISSYMREF))
+			break;
+	}
+	return 0;
+}
+
+int for_each_ref_in_chain(each_ref_fn fn, void *cb_data, const char *starting_ref)
+{
+	return refs_for_each_ref_in_chain(get_main_ref_store(the_repository), fn,
+					  cb_data, starting_ref);
+}
+
 int refs_for_each_ref(struct ref_store *refs, each_ref_fn fn, void *cb_data)
 {
 	return do_for_each_ref(refs, "", fn, 0, 0, cb_data);

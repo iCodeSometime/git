@@ -327,6 +327,19 @@ int for_each_glob_ref_in(each_ref_fn fn, const char *pattern,
 int head_ref_namespaced(each_ref_fn fn, void *cb_data);
 int for_each_namespaced_ref(each_ref_fn fn, void *cb_data);
 
+/*
+ * Iteratively calls fn with each reference in a symref chain.
+ * Iteration will continue until one of the following occurs:
+ * - SYMREF_MAXDEPTH is reached
+ * - A non-symbolic ref is reached (fn will be called with this before returning)
+ * - fn returns a non 0 value
+ *
+ * Will always return 0 unless fn returns a non-zero value.
+ */
+int refs_for_each_ref_in_chain(struct ref_store *refs, each_ref_fn fn,
+			       void *cb_data, const char *starting_ref);
+int for_each_ref_in_chain(each_ref_fn fn, void *cb_data, const char *starting_ref);
+
 /* can be used to learn about broken ref and symref */
 int refs_for_each_rawref(struct ref_store *refs, each_ref_fn fn, void *cb_data);
 int for_each_rawref(each_ref_fn fn, void *cb_data);
