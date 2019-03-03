@@ -387,6 +387,17 @@ int is_worktree_being_bisected(const struct worktree *wt,
 	return found_rebase;
 }
 
+static int find_symref_by_name(const char *ref_name, const struct object_id *oid,
+			       int flags, void *cb_data)
+{
+	const char *target = (const char *)cb_data;
+
+	if ((flags & REF_ISSYMREF) && !strcmp(target, ref_name))
+		return 1;
+	else
+		return 0;
+}
+
 /*
  * note: this function should be able to detect shared symref even if
  * HEAD is temporarily detached (e.g. in the middle of rebase or
@@ -406,9 +417,7 @@ const struct worktree *find_shared_symref(const char *symref,
 
 	for (i = 0; worktrees[i]; i++) {
 		struct worktree *wt = worktrees[i];
-		const char *symref_target;
 		struct ref_store *refs;
-		int flags;
 
 		if (wt->is_bare)
 			continue;
@@ -425,10 +434,7 @@ const struct worktree *find_shared_symref(const char *symref,
 		}
 
 		refs = get_worktree_ref_store(wt);
-		symref_target = refs_resolve_ref_unsafe(refs, symref, 0,
-							NULL, &flags);
-		if ((flags & REF_ISSYMREF) &&
-		    symref_target && !strcmp(symref_target, target)) {
+		if(refs_for_each_ref_in_chain(refs, find_symref_by_name, (void *)target, symref)) {
 			existing = wt;
 			break;
 		}
