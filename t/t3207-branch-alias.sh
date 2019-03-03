@@ -55,4 +55,17 @@ test_expect_success 'git branch --alias refuses to overwrite existing symref' '
 	test_must_fail git branch --alias syme
 '
 
+test_expect_success 'git branch -d refuses to delete a checked out symref' '
+	git branch --alias symd &&
+	git checkout symd &&
+	test_must_fail git branch -d symd
+'
+
+test_expect_success 'git branch -d refuses to delete an indirectly checked out symref' '
+	git symbolic-ref refs/heads/symd2 refs/heads/symd &&
+	git checkout symd2 &&
+	test_must_fail git branch -d symd2 &&
+	test_must_fail git branch -d symd
+'
+
 test_done
