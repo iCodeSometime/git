@@ -233,6 +233,11 @@ static int delete_branches(int argc, const char **argv, int force, int kinds,
 		if (kinds == FILTER_REFS_BRANCHES) {
 			const struct worktree *wt =
 				find_shared_symref("HEAD", name);
+			char *buf;
+			size_t len;
+			FILE *memstream;
+			int cont = 0;
+
 			if (wt) {
 				error(_("Cannot delete branch '%s' "
 					"checked out at '%s'"),
@@ -240,6 +245,21 @@ static int delete_branches(int argc, const char **argv, int force, int kinds,
 				ret = 1;
 				continue;
 			}
+
+			memstream = open_memstream(&buf, &len);
+			warn_dangling_symref(memstream, "%s", name);
+			fclose(memstream);
+			buf[strcspn(buf, "\n")] = '\0';
+			if (len > 0 && !force) {
+				cont = 1;
+				error(_("Deleting branch '%s' would leave dangling symrefs.\n"
+					"If you're sure you want to delete it, run 'git branch -D %s'\n"
+					"The following symrefs would be left dangling:\n%s"),
+				      bname.buf, bname.buf, buf);
+			}
+			free(buf);
+			if (cont)
+				continue;
 		}
 
 		target = resolve_refdup(name,

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2005 Amos Waterland
+# Copyright (c) 2019 Kenneth Cochran
 #
 
 test_description='git branch assorted tests'
@@ -66,6 +66,18 @@ test_expect_success 'git branch -d refuses to delete an indirectly checked out s
 	git checkout symd2 &&
 	test_must_fail git branch -d symd2 &&
 	test_must_fail git branch -d symd
+'
+
+test_expect_success 'git branch -d refuses to create a dangling symref' '
+	git branch dangling_parent &&
+	git branch --alias dangling dangling_parent &&
+	git branch -d dangling_parent &&
+	test_path_is_file .git/refs/heads/dangling_parent
+'
+
+test_expect_success 'git branch -D forces creation of dangling symref' '
+	git branch -D dangling_parent &&
+	test_must_fail test_path_is_file .git/refs/heads/dangling_parent
 '
 
 test_done
